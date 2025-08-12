@@ -3,7 +3,7 @@
 
 ## Descripción General
 
-Este proyecto está diseñado para la gestión escolar, permitiendo la administración eficiente de estudiantes, docentes, cursos, calificaciones y procesos académicos en tiempo real. Todo esto con la finalidad de brindar un nuevo diseño de la web de La salle SIGEA. En este Readme.md encontrará las instrucciones para la instalación y configuración del proyecto, asi como información detalla de como modificar, agregar o eliminar funcionalidades. 
+Este proyecto está diseñado para la gestión escolar, permitiendo la administración eficiente de estudiantes, docentes, cursos, calificaciones y procesos académicos en tiempo real. Todo esto con la finalidad de brindar un nuevo diseño de la web de La salle SIGEA. En este Readme.md encontrará las instrucciones para la instalación y configuración del proyecto, asi como información detallada de como modificar, agregar o eliminar funcionalidades. 
 
 
 ## Arquitectura del Proyecto
