@@ -401,5 +401,3 @@ Para alguna consulta:
 
 **Proyecto desarrollado con esfuerzo y cariño por: Mauro Ortiz Juárez**
 =======
-# ALUMNO
-proyecto
