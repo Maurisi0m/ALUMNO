@@ -128,33 +128,96 @@ export class DetAfService {
   static async enrollUser(userId: number, categoryId: number) {
     try {
       console.log(`📝 Inscribiendo usuario ${userId} en categoría ${categoryId}...`);
-      
-      const pool = await getConnection();
-      
-      // Usar procedimiento almacenado seguro
-      const result = await pool.request()
-        .input('usuario_id', sql.Int, userId)
-        .input('categoria_id', sql.Int, categoryId)
-        .execute('sp_inscribir_det_af');
 
-      const response = result.recordset[0];
-      console.log(`✅ Inscripción exitosa:`, response);
-      
+      const pool = await getConnection();
+
+      // Verificar que la categoría existe y obtener información
+      const categoryResult = await pool.request()
+        .input('categoryId', sql.Int, categoryId)
+        .query(`
+          SELECT id, tipo, nombre, cupo_maximo, activo
+          FROM categorias_det_af
+          WHERE id = @categoryId
+        `);
+
+      if (categoryResult.recordset.length === 0) {
+        throw new Error('La categoría seleccionada no existe');
+      }
+
+      const category = categoryResult.recordset[0];
+
+      if (!category.activo) {
+        throw new Error('La categoría seleccionada no está disponible');
+      }
+
+      // Verificar que el usuario no tenga ya una inscripción activa del mismo tipo
+      const existingResult = await pool.request()
+        .input('userId', sql.Int, userId)
+        .input('tipo', sql.NVarChar(10), category.tipo)
+        .query(`
+          SELECT id, categoria_id
+          FROM inscripciones_det_af
+          WHERE usuario_id = @userId
+          AND tipo_categoria = @tipo
+          AND estado = 'activa'
+        `);
+
+      if (existingResult.recordset.length > 0) {
+        throw new Error(`Ya tienes una inscripción activa en ${category.tipo}. Debes darte de baja primero`);
+      }
+
+      // Verificar cupo disponible
+      const cupoResult = await pool.request()
+        .input('categoryId', sql.Int, categoryId)
+        .query(`
+          SELECT
+            c.cupo_maximo,
+            COUNT(i.id) as inscritos_actuales
+          FROM categorias_det_af c
+          LEFT JOIN inscripciones_det_af i ON c.id = i.categoria_id AND i.estado = 'activa'
+          WHERE c.id = @categoryId
+          GROUP BY c.cupo_maximo
+        `);
+
+      const cupoInfo = cupoResult.recordset[0];
+
+      if (cupoInfo.inscritos_actuales >= cupoInfo.cupo_maximo) {
+        throw new Error('No hay cupo disponible en esta categoría');
+      }
+
+      // Proceder con la inscripción
+      const insertResult = await pool.request()
+        .input('userId', sql.Int, userId)
+        .input('categoryId', sql.Int, categoryId)
+        .input('tipo', sql.NVarChar(10), category.tipo)
+        .query(`
+          INSERT INTO inscripciones_det_af (usuario_id, categoria_id, tipo_categoria, estado, fecha_inscripcion)
+          VALUES (@userId, @categoryId, @tipo, 'activa', GETDATE());
+
+          SELECT SCOPE_IDENTITY() as inscripcion_id;
+        `);
+
+      const inscripcionId = insertResult.recordset[0].inscripcion_id;
+
+      console.log(`✅ Inscripción exitosa: ${inscripcionId}`);
+
       return {
         success: true,
-        message: response.mensaje,
-        inscripcion_id: response.inscripcion_id
+        message: `Te has inscrito exitosamente en ${category.nombre}`,
+        inscripcion_id: inscripcionId
       };
     } catch (error: any) {
       console.error('💥 Error en inscripción:', error);
-      
-      // Manejar errores específicos del procedimiento almacenado
-      if (error.number === 50001) {
+
+      // Manejar errores específicos
+      if (error.message.includes('no existe')) {
         throw new Error('La categoría seleccionada no existe o está inactiva');
-      } else if (error.number === 50002) {
-        throw new Error('Ya tienes una inscripción activa en este tipo de categoría. Debes darte de baja primero');
-      } else if (error.number === 50003) {
+      } else if (error.message.includes('Ya tienes una inscripción')) {
+        throw new Error(error.message);
+      } else if (error.message.includes('No hay cupo')) {
         throw new Error('No hay cupo disponible en esta categoría');
+      } else if (error.number === 2627) { // Constraint violation
+        throw new Error('Ya tienes una inscripción activa en este tipo de categoría');
       } else {
         throw new Error('Error al procesar la inscripción');
       }
@@ -167,28 +230,68 @@ export class DetAfService {
   static async unenrollUser(userId: number, inscriptionId: number) {
     try {
       console.log(`📝 Dando de baja usuario ${userId} de inscripción ${inscriptionId}...`);
-      
-      const pool = await getConnection();
-      
-      // Usar procedimiento almacenado seguro
-      const result = await pool.request()
-        .input('usuario_id', sql.Int, userId)
-        .input('inscripcion_id', sql.Int, inscriptionId)
-        .execute('sp_dar_baja_det_af');
 
-      const response = result.recordset[0];
-      console.log(`✅ Baja exitosa:`, response);
-      
+      const pool = await getConnection();
+
+      // Primero verificar que la inscripción existe y está activa
+      const checkResult = await pool.request()
+        .input('userId', sql.Int, userId)
+        .input('inscriptionId', sql.Int, inscriptionId)
+        .query(`
+          SELECT id, tipo_categoria, estado
+          FROM inscripciones_det_af
+          WHERE id = @inscriptionId
+          AND usuario_id = @userId
+        `);
+
+      if (checkResult.recordset.length === 0) {
+        throw new Error('La inscripción no existe o no pertenece al usuario');
+      }
+
+      const inscription = checkResult.recordset[0];
+
+      if (inscription.estado !== 'activa') {
+        // Si ya está dada de baja, no es error - simplemente retornar éxito
+        console.log(`ℹ️ Inscripción ${inscriptionId} ya estaba dada de baja`);
+        return {
+          success: true,
+          message: 'Ya te habías dado de baja anteriormente'
+        };
+      }
+
+      // Proceder con la baja usando UPDATE directo (más seguro que procedimiento almacenado)
+      const updateResult = await pool.request()
+        .input('userId', sql.Int, userId)
+        .input('inscriptionId', sql.Int, inscriptionId)
+        .query(`
+          UPDATE inscripciones_det_af
+          SET estado = 'baja', fecha_baja = GETDATE()
+          WHERE id = @inscriptionId
+          AND usuario_id = @userId
+          AND estado = 'activa'
+        `);
+
+      if (updateResult.rowsAffected[0] === 0) {
+        throw new Error('No se pudo procesar la baja - inscripción no encontrada o ya inactiva');
+      }
+
+      console.log(`✅ Baja exitosa para inscripción ${inscriptionId}`);
+
       return {
         success: true,
-        message: response.mensaje
+        message: 'Te has dado de baja exitosamente'
       };
     } catch (error: any) {
       console.error('💥 Error en baja:', error);
-      
-      // Manejar errores específicos del procedimiento almacenado
-      if (error.number === 50004) {
+
+      // Manejar errores específicos
+      if (error.number === 2627) { // Constraint violation
+        // Este caso no debería ocurrir con UPDATE, pero por si acaso
+        throw new Error('Ya te has dado de baja anteriormente');
+      } else if (error.number === 50004) {
         throw new Error('La inscripción no existe o ya fue dada de baja');
+      } else if (error.message.includes('no existe') || error.message.includes('no pertenece')) {
+        throw new Error(error.message);
       } else {
         throw new Error('Error al procesar la baja');
       }

@@ -90,11 +90,16 @@ export function useDetAf() {
   const loadMyInscriptions = async () => {
     try {
       console.log('🔍 Cargando mis inscripciones...');
-      
+
       const response = await authenticatedFetch('/api/detaf/my-inscriptions');
+
+      if (!response.ok) {
+        throw new Error('Error cargando inscripciones');
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (data.success) {
         setInscriptions(data.data);
         console.log(`✅ ${data.data.length} inscripciones cargadas`);
       } else {
@@ -116,11 +121,16 @@ export function useDetAf() {
   const loadMyStatus = async () => {
     try {
       console.log('📊 Cargando estado de inscripciones...');
-      
+
       const response = await authenticatedFetch('/api/detaf/my-status');
+
+      if (!response.ok) {
+        throw new Error('Error cargando estado');
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (data.success) {
         setStatus(data.data);
         console.log('✅ Estado cargado:', data.data);
       } else {
@@ -142,12 +152,43 @@ export function useDetAf() {
         body: JSON.stringify({ categoryId }),
       });
 
-      const data = await response.json();
+      // Check if response is ok and has content before reading JSON
+      if (!response.ok) {
+        // For non-ok responses, try to read error message if possible
+        let errorMessage = 'Error en inscripción';
+        try {
+          if (response.headers.get('content-type')?.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
+            errorMessage = await response.text() || errorMessage;
+          }
+        } catch (readError) {
+          console.warn('Could not read error response:', readError);
+        }
+        throw new Error(errorMessage);
+      }
 
-      if (response.ok && data.success) {
+      // Clone response to avoid "body stream already read" error
+      const responseClone = response.clone();
+      let data;
+
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.warn('Failed to parse JSON, trying with cloned response:', jsonError);
+        try {
+          data = await responseClone.json();
+        } catch (cloneError) {
+          console.error('Failed to parse JSON from both responses:', cloneError);
+          throw new Error('Respuesta del servidor inválida');
+        }
+      }
+
+      if (data.success) {
         toast({
           title: "¡Inscripción exitosa!",
-          description: data.message,
+          description: data.message || "Te has inscrito exitosamente",
           variant: "default"
         });
 
@@ -166,7 +207,7 @@ export function useDetAf() {
       console.error('💥 Error en inscripción:', error);
       toast({
         title: "Error en inscripción",
-        description: error.message,
+        description: error.message || "Ocurrió un error al procesar la inscripción",
         variant: "destructive"
       });
       return false;
@@ -186,12 +227,43 @@ export function useDetAf() {
         body: JSON.stringify({ inscriptionId }),
       });
 
-      const data = await response.json();
+      // Check if response is ok and has content before reading JSON
+      if (!response.ok) {
+        // For non-ok responses, try to read error message if possible
+        let errorMessage = 'Error en baja';
+        try {
+          if (response.headers.get('content-type')?.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
+            errorMessage = await response.text() || errorMessage;
+          }
+        } catch (readError) {
+          console.warn('Could not read error response:', readError);
+        }
+        throw new Error(errorMessage);
+      }
 
-      if (response.ok && data.success) {
+      // Clone response to avoid "body stream already read" error
+      const responseClone = response.clone();
+      let data;
+
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.warn('Failed to parse JSON, trying with cloned response:', jsonError);
+        try {
+          data = await responseClone.json();
+        } catch (cloneError) {
+          console.error('Failed to parse JSON from both responses:', cloneError);
+          throw new Error('Respuesta del servidor inválida');
+        }
+      }
+
+      if (data.success) {
         toast({
           title: "Baja exitosa",
-          description: data.message,
+          description: data.message || "Te has dado de baja exitosamente",
           variant: "default"
         });
 
@@ -208,11 +280,38 @@ export function useDetAf() {
       }
     } catch (error: any) {
       console.error('💥 Error en baja:', error);
+
+      let errorMessage = error.message || "Ocurrió un error al procesar la baja";
+      let shouldRefresh = false;
+
+      // Handle specific database constraint errors
+      if (error.message.includes('UNIQUE KEY constraint') ||
+          error.message.includes('UQ_Usuario_DET') ||
+          error.message.includes('Ya te has dado de baja') ||
+          error.message.includes('ya fue dada de baja') ||
+          error.message.includes('no existe o ya')) {
+        errorMessage = "Ya te has dado de baja anteriormente. Actualizando datos...";
+        shouldRefresh = true;
+      } else if (error.message.includes('no pertenece al usuario')) {
+        errorMessage = "Esta inscripción no te pertenece";
+        shouldRefresh = true;
+      }
+
+      // Show appropriate message
       toast({
-        title: "Error en baja",
-        description: error.message,
-        variant: "destructive"
+        title: shouldRefresh ? "Información" : "Error en baja",
+        description: errorMessage,
+        variant: shouldRefresh ? "default" : "destructive"
       });
+
+      // Force refresh data if needed
+      if (shouldRefresh) {
+        setTimeout(() => {
+          loadAllData();
+        }, 1000);
+        return true; // Consider it successful since data will be refreshed
+      }
+
       return false;
     } finally {
       setEnrolling(false);
@@ -223,9 +322,14 @@ export function useDetAf() {
   const checkEligibility = async (categoryId: number) => {
     try {
       const response = await authenticatedFetch(`/api/detaf/check-eligibility/${categoryId}`);
+
+      if (!response.ok) {
+        throw new Error('Error verificando elegibilidad');
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (data.success) {
         return data.data;
       } else {
         throw new Error(data.error || 'Error verificando elegibilidad');
