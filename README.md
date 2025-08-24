@@ -1,3 +1,30 @@
+## CAMBIOS RECIENTES - 24/08/2025
+
+### Fix de Constraints de Base de Datos DET/AF
+**Problema resuelto**: Error en sistema de bajas de inscripciones DET/AF
+
+**Cambios implementados**:
+- **Database Schema Fix**: Removido constraint único problemático `UQ_Usuario_DET_Activo` que impedía re-inscripciones
+- **Backend Service Improvements**: Mejorada validación y manejo de errores en `detAfService.ts`
+- **Frontend Error Handling**: Añadido manejo específico de errores de constraint con auto-refresh
+- **SQL Fix Scripts**: Creados scripts de corrección automática:
+  - `fix-constraint-proper.sql` - Fix principal de constraints
+  - `add-fecha-baja-field.sql` - Añade campo fecha_baja
+  - `fix-detaf-constraint-corrected.sql` - Script de corrección completa
+
+**Funcionalidad restaurada**:
+- Usuarios pueden darse de baja de actividades DET/AF sin errores
+- Re-inscripción permitida después de baja
+- Historial completo de inscripciones mantenido
+- Mensajes de error más informativos
+
+**Archivos modificados**:
+- `client/hooks/use-detaf.tsx` - Mejor manejo de errores HTTP
+- `server/services/detAfService.ts` - Lógica mejorada de inscripción/baja
+- Scripts SQL para corrección de base de datos
+
+---
+
 ## NUEVA FUNCIONALIDAD: SISTEMA DE MATERIAS Y CALIFICACIONES
 
 ### Descripción de la Nueva Funcionalidad
