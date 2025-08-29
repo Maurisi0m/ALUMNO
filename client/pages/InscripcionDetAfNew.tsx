@@ -231,7 +231,7 @@ export default function InscripcionDetAfNew() {
                 <Users className="h-8 w-8 mr-3 text-lasalle-gold" />
                 Inscripciones DET/AF
               </h1>
-              <p className="text-blue-100">Desarrollo Estudiantil (DET) y Actividades Físicas (AF)</p>
+              <p className="text-blue-100">Desarrollo de talentos (DET) y Actividades Físicas (AF)</p>
             </div>
           </div>
           
@@ -263,7 +263,7 @@ export default function InscripcionDetAfNew() {
                     <Cpu className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-700">Desarrollo Estudiantil (DET)</h3>
+                    <h3 className="font-semibold text-blue-700">Desarrollo de talentos (DET)</h3>
                     {status.det_inscrito ? (
                       <div className="flex items-center space-x-2 text-green-600">
                         <CheckCircle className="h-4 w-4" />
@@ -307,7 +307,7 @@ export default function InscripcionDetAfNew() {
                   <div className="text-sm text-yellow-800">
                     <p className="font-medium">Límites de inscripción:</p>
                     <ul className="mt-1 space-y-1">
-                      <li>• Máximo 1 actividad DET + 1 actividad AF</li>
+                      <li>• Máximo 1 actividad DET + 1 actividad AF (CONSULTA SI ESTAS EN SELECTIVO/EXTRAMUROS DE AF)</li>
                       <li>• Puedes darte de baja e inscribirte en otra categoría</li>
                       <li>• Las inscripciones están sujetas a disponibilidad de cupo</li>
                     </ul>
@@ -335,7 +335,7 @@ export default function InscripcionDetAfNew() {
               }`}
             >
               <Cpu className="h-4 w-4 mr-2" />
-              Desarrollo Estudiantil ({detCategories.length})
+              Desarrollo De Talentos ({detCategories.length})
             </Button>
             <Button
               onClick={() => setActiveTab('AF')}

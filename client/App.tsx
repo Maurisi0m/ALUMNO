@@ -35,6 +35,12 @@ import Extraordinario from "./pages/Extraordinario";
 import RegularizacionIntersemestral from "./pages/RegularizacionIntersemestral";
 import RegularizacionSemestral from "./pages/RegularizacionSemestral";
 import Diagnostico from "./pages/Diagnostico";
+import BulkUsers from "./pages/BulkUsers";
+import Downloads from "./pages/Downloads";
+import StudyAreaSelection from "./pages/StudyAreaSelection";
+import Inscription from "./pages/Inscription";
+import Reinscription from "./pages/Reinscription";
+import Admission from "./pages/Admission";
 
 const queryClient = new QueryClient();
 
@@ -53,63 +59,19 @@ const AppContent = () => {
 
           {/* Secciones Oficiales de SIGEA para Estudiantes */}
           <Route path="/materias" element={<MateriasNew />} />
-          <Route
-            path="/descargas"
-            element={
-              <Placeholder
-                title={t.sections.downloads}
-                description={t.sections.downloadsDesc}
-                icon={<Download className="h-16 w-16 text-green-500" />}
-              />
-            }
-          />
+          <Route path="/descargas" element={<Downloads />} />
           <Route path="/inscripcion-det-af" element={<InscripcionDetAfNew />} />
           <Route path="/inscripcion-det-af-old" element={<InscripcionDetAf />} />
           <Route path="/regularizacion-intersemestral" element={<RegularizacionIntersemestral />} />
           <Route path="/regularizacion-semestral" element={<RegularizacionSemestral />} />
           <Route path="/extraordinario" element={<Extraordinario />} />
-          <Route
-            path="/elegir-area-estudios"
-            element={
-              <Placeholder
-                title={t.sections.chooseStudyArea}
-                description={t.sections.chooseStudyAreaDesc}
-                icon={<BookMarked className="h-16 w-16 text-teal-500" />}
-              />
-            }
-          />
-          <Route
-            path="/inscripcion"
-            element={
-              <Placeholder
-                title={t.sections.inscription}
-                description={t.sections.inscriptionDesc}
-                icon={<Award className="h-16 w-16 text-pink-500" />}
-              />
-            }
-          />
-          <Route
-            path="/reinscripcion"
-            element={
-              <Placeholder
-                title={t.sections.reinscription}
-                description={t.sections.reinscriptionDesc}
-                icon={<Award className="h-16 w-16 text-cyan-500" />}
-              />
-            }
-          />
-          <Route
-            path="/admision"
-            element={
-              <Placeholder
-                title={t.sections.admission}
-                description={t.sections.admissionDesc}
-                icon={<User className="h-16 w-16 text-gray-500" />}
-              />
-            }
-          />
+          <Route path="/elegir-area-estudios" element={<StudyAreaSelection />} />
+          <Route path="/inscripcion" element={<Inscription />} />
+          <Route path="/reinscripcion" element={<Reinscription />} />
+          <Route path="/admision" element={<Admission />} />
           <Route path="/manual" element={<Manual />} />
           <Route path="/diagnostico" element={<Diagnostico />} />
+          <Route path="/admin/bulk-users" element={<BulkUsers />} />
           <Route
             path="/soporte"
             element={

@@ -218,3 +218,72 @@ export const handleCustomQuery: RequestHandler = async (req, res) => {
     });
   }
 };
+
+// Endpoint para verificar y corregir emails
+export const handleFixEmails: RequestHandler = async (req, res) => {
+  try {
+    const pool = await getConnection();
+
+    // Verificar emails actuales
+    const currentEmails = await pool.query(`
+      SELECT id, nombre, email, matricula
+      FROM usuarios
+      WHERE rol = 'estudiante'
+      ORDER BY id
+    `);
+
+    const students = currentEmails.recordset;
+    const incorrectEmails = students.filter(user => !user.email.endsWith('@lasallep.mx'));
+
+    let correctedCount = 0;
+    const corrections = [];
+
+    if (incorrectEmails.length > 0) {
+      // Corregir emails
+      for (const user of incorrectEmails) {
+        const newEmail = `${user.matricula}@lasallep.mx`;
+
+        await pool.request()
+          .input('newEmail', sql.VarChar, newEmail)
+          .input('userId', sql.Int, user.id)
+          .query('UPDATE usuarios SET email = @newEmail WHERE id = @userId');
+
+        corrections.push({
+          id: user.id,
+          nombre: user.nombre,
+          matricula: user.matricula,
+          oldEmail: user.email,
+          newEmail: newEmail
+        });
+
+        correctedCount++;
+      }
+    }
+
+    // Verificar emails después de la corrección
+    const finalEmails = await pool.query(`
+      SELECT id, nombre, email, matricula
+      FROM usuarios
+      WHERE rol = 'estudiante'
+      ORDER BY id
+    `);
+
+    res.json({
+      success: true,
+      message: `Verificación y corrección de emails completada`,
+      totalStudents: students.length,
+      incorrectEmailsFound: incorrectEmails.length,
+      emailsCorrected: correctedCount,
+      corrections: corrections,
+      finalEmails: finalEmails.recordset
+    });
+
+  } catch (error: any) {
+    console.error('Error corrigiendo emails:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+};

@@ -1,3 +1,119 @@
+# CAMBIOS RECIENTES - SIGEA
+
+## Última actualización: Agosto 2025
+
+**Sistema completamente nuevo desde cero**
+
+#### **Base de Datos Renovada**
+- **14 categorías nuevas** disponibles:
+  - **DET (Desarrollo Estudiantil)**: Fotografía, Dibujo, Mindfulness, Robótica, Guitarra, Ensamble Musical
+  - **AF (Actividades Físicas)**: Atletismo, Gimnasio, Fisioconstructivismo, Básquet, Fútbol Rápido, Fútbol, Tocho, Americano
+- **Control de cupos en tiempo real** con locks y transacciones
+- **Procedimientos almacenados seguros** (`sp_inscribir_det_af`, `sp_dar_baja_det_af`)
+- **Constraints únicos** garantizan 1 DET + 1 AF máximo por usuario
+
+#### **Backend Modernizado**
+- **Nuevo servicio**: `server/services/detAfService.ts` con validaciones robustas
+- **Rutas RESTful**: `server/routes/detAf.ts` con autenticación JWT mejorada
+- **8 endpoints nuevos**:
+  ```
+  GET    /api/detaf/categories              # Categorías disponibles
+  GET    /api/detaf/stats                   # Estadísticas generales
+  GET    /api/detaf/my-inscriptions         # Mis inscripciones
+  GET    /api/detaf/my-status               # Mi estado DET/AF
+  POST   /api/detaf/enroll                  # Inscribirse
+  POST   /api/detaf/unenroll                # Darse de baja
+  GET    /api/detaf/check-eligibility/:id   # Verificar elegibilidad
+  GET    /api/detaf/admin/inscriptions      # Admin: inscripciones
+  ```
+
+#### **Frontend Renovado**
+- **Nueva página**: `client/pages/InscripcionDetAfNew.tsx` con diseño moderno
+- **Hook personalizado**: `client/hooks/use-detaf.tsx` para estado global
+- **Diseño responsive** con animaciones Framer Motion
+- **Tabs para DET/AF** con contadores en tiempo real
+- **Estados visuales claros**: inscrito/disponible/sin cupo
+
+#### **Problemas Solucionados**
+- **Fix crítico**: Removido constraint único problemático `UQ_Usuario_DET_Activo`
+- **Re-inscripciones permitidas** después de darse de baja
+- **Token management unificado** evita duplicaciones
+- **Transacciones atómicas** previenen overbooking
+- **Manejo de errores mejorado** con auto-refresh
+
+---
+
+### SISTEMA DE MATERIAS Y CALIFICACIONES - 16/08/2025
+
+**Implementación completa de gestión académica**
+
+#### **Nuevas Funcionalidades**
+- **Cálculo automático de promedios** por materia y general
+- **Visualización en tiempo real** de todas las materias
+- **Contador de materias aprobadas** (≥70)
+- **Total de créditos** automático
+- **Soporte para múltiples tipos de evaluación**:
+  - Primer Parcial, Segundo Parcial, Ordinario
+  - Proyecto, Exámenes Semanales, Calificación Final
+
+#### **Componentes Implementados**
+- **Frontend**: `client/pages/Materias.tsx` y `client/pages/MateriasNew.tsx`
+- **Backend**: Endpoints en `server/routes/auth.ts`
+- **APIs nuevas**:
+  - `GET /api/auth/grades` - Obtener calificaciones
+  - `GET /api/auth/grades/debug` - Debug de calificaciones
+
+#### **Estadísticas Disponibles**
+- Promedio general calculado en tiempo real
+- Materias aprobadas vs total
+- Suma automática de créditos
+- Estado de inscripción ACTIVO/INACTIVO
+
+---
+
+### MEJORAS TÉCNICAS GENERALES
+
+#### **Scripts SQL de Corrección**
+- `fix-constraint-proper.sql` - Fix principal de constraints
+- `add-fecha-baja-field.sql` - Añade campo fecha_baja
+- `fix-detaf-constraint-corrected.sql` - Corrección completa
+- `verify-detaf-fix.sql` - Verificación de fixes
+
+#### **Seguridad Mejorada**
+- **Autenticación JWT** reforzada en todos los endpoints
+- **Middleware `authenticateToken`** estandarizado
+- **Validación de permisos** por usuario
+- **Encriptación bcrypt** para contraseñas
+
+---
+
+## CAMBIOS RECIENTES - 24/08/2025
+
+### Fix de Constraints de Base de Datos DET/AF
+**Problema resuelto**: Error en sistema de bajas de inscripciones DET/AF
+
+**Cambios implementados**:
+- **Database Schema Fix**: Removido constraint único problemático `UQ_Usuario_DET_Activo` que impedía re-inscripciones
+- **Backend Service Improvements**: Mejorada validación y manejo de errores en `detAfService.ts`
+- **Frontend Error Handling**: Añadido manejo específico de errores de constraint con auto-refresh
+- **SQL Fix Scripts**: Creados scripts de corrección automática:
+  - `fix-constraint-proper.sql` - Fix principal de constraints
+  - `add-fecha-baja-field.sql` - Añade campo fecha_baja
+  - `fix-detaf-constraint-corrected.sql` - Script de corrección completa
+
+**Funcionalidad restaurada**:
+- Usuarios pueden darse de baja de actividades DET/AF sin errores
+- Re-inscripción permitida después de baja
+- Historial completo de inscripciones mantenido
+- Mensajes de error más informativos
+
+**Archivos modificados**:
+- `client/hooks/use-detaf.tsx` - Mejor manejo de errores HTTP
+- `server/services/detAfService.ts` - Lógica mejorada de inscripción/baja
+- Scripts SQL para corrección de base de datos
+
+---
+
 ## NUEVA FUNCIONALIDAD: SISTEMA DE MATERIAS Y CALIFICACIONES
 
 ### Descripción de la Nueva Funcionalidad
@@ -81,7 +197,7 @@ El sistema calcula automáticamente:
 - **Encriptación de contraseñas** con bcrypt
 - **Tokens con expiración** para seguridad mejorada
 
-### Instalación y Configuración
+### Instalaci��n y Configuración
 
 **Requisitos:**
 - Node.js 18+
@@ -127,7 +243,7 @@ JWT_SECRET=tu_secreto_jwt
 
 ## Descripción General
 
-Este proyecto está diseñado para la gestión escolar, permitiendo la administración eficiente de estudiantes, docentes, cursos, calificaciones y procesos académicos en tiempo real. Todo esto con la finalidad de brindar un nuevo diseño de la web de La salle SIGEA. En este Readme.md encontrará las instrucciones para la instalación y configuración del proyecto, asi como información detallada de como modificar, agregar o eliminar funcionalidades. 
+Este proyecto est�� diseñado para la gestión escolar, permitiendo la administración eficiente de estudiantes, docentes, cursos, calificaciones y procesos académicos en tiempo real. Todo esto con la finalidad de brindar un nuevo diseño de la web de La salle SIGEA. En este Readme.md encontrará las instrucciones para la instalación y configuración del proyecto, asi como información detallada de como modificar, agregar o eliminar funcionalidades. 
 
 
 ## Arquitectura del Proyecto
@@ -145,7 +261,7 @@ SIGEA/
 │   ├── services/            # Servicios de API
 │   └── global.css           # Estilos globales
 ├── server/                   # Backend Node.js
-│   ├── config/              # Configuraciones
+│   ├��─ config/              # Configuraciones
 │   │   └── database.ts      # Configuración SQL Server
 │   ├── routes/              # Rutas de API
 │   ├── services/            # Lógica de negocio
@@ -360,7 +476,7 @@ SQL_SERVER=tu-dominio.com  // Dominio externo
    - Abrir puerto 1433 en el router
    - Redirigir al IP local del servidor SQL
 
-2. **Configuración típica**:
+2. **Configuración t��pica**:
    ```
    External Port: 1433
    Internal Port: 1433

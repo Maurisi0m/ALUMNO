@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleLogin, handleProfile, handleGrades, handleRegister, handleGetDetAfCategories, handleGetUserDetAfInscriptions, handleEnrollDetAf, handleUnenrollDetAf, handleDebugGrades, handleAcademicSummary } from "./routes/auth";
-import { handleFullDatabaseDebug, handleForceCreateUser, handleCustomQuery } from "./routes/debug";
+import { handleFullDatabaseDebug, handleForceCreateUser, handleCustomQuery, handleFixEmails } from "./routes/debug";
 import { getConnection, closeConnection } from "./config/database";
 
 // Importar nuevas rutas DET/AF
@@ -18,6 +18,10 @@ import {
   handleGetStats,
   handleGetAllInscriptions
 } from "./routes/detAf";
+
+// Importar rutas de creación masiva de usuarios
+import { createBachilleratoUsers, getUserStats, checkAvailableMatriculas } from "./routes/bulkUsers";
+import { executeCreateBachillerato } from "./routes/executeCreation";
 
 export function createServer() {
   const app = express();
@@ -83,6 +87,17 @@ export function createServer() {
   app.get("/api/debug/full", handleFullDatabaseDebug);
   app.post("/api/debug/force-create-user", handleForceCreateUser);
   app.post("/api/debug/custom-query", handleCustomQuery);
+  app.get("/api/debug/fix-emails", handleFixEmails);
+
+  // ================================================================
+  // RUTAS DE CREACIÓN MASIVA DE USUARIOS
+  // ================================================================
+  app.post("/api/bulk-users/bachillerato", createBachilleratoUsers);
+  app.get("/api/bulk-users/stats", getUserStats);
+  app.get("/api/bulk-users/check-matriculas/:start/:count", checkAvailableMatriculas);
+
+  // Endpoint para ejecutar creación directa
+  app.get("/api/execute/create-bachillerato", executeCreateBachillerato);
 
   // Test directo de calificaciones sin token
   app.get("/api/test/grades-direct", async (req, res) => {
